@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 
 # ==================== إعدادات الصفحة والتصميم ====================
 st.set_page_config(
@@ -210,7 +211,13 @@ def get_gspread_client():
         "https://www.googleapis.com/auth/drive"
     ]
     try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        # الاتصال السحابي من خلال Streamlit Secrets أو محلياً بملف credentials.json
+        if "google_credentials" in st.secrets:
+            creds_dict = dict(st.secrets["google_credentials"])
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        else:
+            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+            
         client = gspread.authorize(creds)
         return client
     except Exception as e:
@@ -762,7 +769,6 @@ elif menu == "سجل الأطفال":
         elif col_name in DROPDOWN_OPTIONS:
             options = DROPDOWN_OPTIONS[col_name]
             
-            # تعديل خيارات "إعطاء الجرعة اليومية من الحديد" لتشمل "لا يوجد" بناءً على طلبك
             if col_name == "إعطاء الجرعة اليومية من الحديد":
                 options = ["يوجد", "لا يوجد"]
 
@@ -950,7 +956,6 @@ elif menu == "سجل الأطفال":
                 st.text_input(col_name, key=f"c_{col_name}")
 
     if st.button("💾 حفظ بيانات الطفل", use_container_width=True):
-        # تفعيل أنيميشن القلب والسهم وكلمة شيماء عند الضغط على حفظ
         st.session_state.show_shaimaa_animation = True
         
         final_child_data = {}
@@ -1181,7 +1186,7 @@ elif menu == "استعراض البيانات والداشبورد":
             label="📥 تحميل البيانات المعروضة (CSV / Excel)",
             data=csv_data,
             file_name=f"{sheet_to_show}_export.csv",
-            mime="text/css" if False else "text/csv",
+            mime="text/csv",
             use_container_width=True,
         )
     else:
