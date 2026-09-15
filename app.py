@@ -217,7 +217,10 @@ def get_gspread_client():
       if isinstance(creds_value, str):
         creds_dict = json.loads(creds_value)
       else:
+        # تحويل AttrDict أو الديكشنري الخاص بـ Streamlit إلى dict عادية مع معالجة الـ private_key والـ newlines
         creds_dict = dict(creds_value)
+        if "private_key" in creds_dict:
+          creds_dict["private_key"] = creds_dict["private_key"].replace(r"\n", "\n")
       creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     else:
       creds = ServiceAccountCredentials.from_json_keyfile_name(
